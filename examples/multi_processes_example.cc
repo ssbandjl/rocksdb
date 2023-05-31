@@ -25,6 +25,7 @@
 
 // TODO: port this example to other systems. It should be straightforward for
 // POSIX-compliant systems.
+#define OS_LINUX 1
 #if defined(OS_LINUX)
 #include <dirent.h>
 #include <signal.h>

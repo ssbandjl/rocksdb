@@ -1,0 +1,87 @@
+https://github.com/ssbandjl/rocksdb.git
+
+TransactionDB
+
+编译:
+make static_lib
+cd examples/;make all
+
+mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=/usr/local/rocksdb .. && make && make install
+
+env:
+export CPLUS_INCLUDE_PATH=\$CPLUS_INCLUDE_PATH:/usr/local/rocksdb/include/
+export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/rocksdb/lib64/
+export LIBRARY_PATH=\$LIBRARY_PATH:/usr/local/rocksdb/lib64/
+
+test:
+cd build/tools/
+./ldb –h
+./ldb--db=/opt/myRocksDB --create_if_missing put felixzh_key felixzh_value
+./ldb--db=/opt/myRocksDB scan
+./ldb--db=/opt/myRocksDB get felixzh_key
+ll opt/myRocksDB/
+
+flush 落盘, db_write_buffer_size
+影响memtable的最重要的几个选项是：
+memtable_factory: memtable对象的工厂。通过声明一个工厂对象，用户可以改变底层memtable的实现，并提供事先声明的选项。
+write_buffer_size：一个memtable的大小。
+db_write_buffer_size：多个列族的memtable的大小总和。这可以用来管理memtable使用的总内存数。
+write_buffer_manager：除了声明memtable的总大小，用户还可以提供他们自己的写缓冲区管理器，用来控制总体的memtable使用量。这个选项会覆盖db_write_buffer_size。
+max_write_buffer_number：内存中可以拥有刷盘到SST文件前的最大memtable数。
+这些都可以在RocksDB的Option对象中配置。
+2.4、Flush
+有三种场景会导致memtable落盘被触发：
+Memtable的大小在一次写入后超过write_buffer_size。
+所有列族中的memtable大小超过db_write_buffer_size了，或者write_buffer_manager要求落盘。在这种场景，最大的memtable会被落盘。
+WAL文件的总大小超过max_total_wal_size。在这个场景，有着最老数据的memtable会被落盘，这样才允许携带有跟这个memtable相关数据的WAL文件被删除。
+就结果来说，memtable可能还没写满就落盘了。这是为什么生成的SST文件小于对应的memtable大小。压缩是另一个导致SST文件变小的原因，因为memtable里的数据是没有压缩的。
+
+
+COMPILE_WITH_ASAN=1 make all check -j
+COMPILE_WITH_TSAN=1 make all check -j
+make valgrind_test -j
+COMPILE_WITH_UBSAN=1 make all check -j
+make analyze
+编译参考:
+CC=gcc-10 CXX=g++-10 mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_COROUTINES=1 -DWITH_GFLAGS=1 -DROCKSDB_BUILD_SHARED=0 .. && make -j
+mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_LZ4=1 -DWITH_ZSTD=1 -DUSE_COROUTINES=1 -DWITH_GFLAGS=1 -DROCKSDB_BUILD_SHARED=0 .. && make -j db_bench
+
+
+单元测试: RocksDB 使用 gtest。 GNU make 所使用的 makefile 有一些支持可以帮助开发者并行运行所有的单元测试，下面会介绍。 如果您使用 cmake，则可以使用 ctest 运行测试。
+make check
+sh tools/rocksdb_dump_test.sh
+make check将编译并运行所有单元测试。make check将在调试模式下编译 RocksDB
+
+make clean
+make J=64 all check [-j]
+
+./db_basic_test --help
+./db_basic_test --gtest_filter=“*DBBasicTest.OpenWhenOpen*”
+默认情况下，即使测试失败，测试创建的测试数据库也会被清除。 您可以尝试使用 --gtest_throw_on_failure 来保留它。 如果要在断言失败时停止调试器，请指定 --gtest_break_on_failure。 KEEP_DB=1 环境变量是另一种防止测试数据库在单元测试运行结束时被删除的方法，无论测试是否失败：
+
+代码格式化, 风格: ./build_tools/format-diff.sh
+
+
+qa:
+安装gflag: apt-get install libgflags-dev
+
+
+test:
+examples/simple_example.cc
+
+
+内存管理: class Allocator -> memory/allocator.h, https://juejin.cn/post/7145741850240876551
+class Arena : public Allocator
+class ConcurrentArena : public Allocator
+
+
+总结
+1. 入参 Func 就是上面传入的 Lambda 表达式：this, bytes { returnarena_.Allocate(bytes) ；
+2. 当请求内存块较大时，直接从 Arena 分配且需要加锁；否则直接从当前 CPU 对应的 Shard 分配；
+3. 若当前 Shard 可用内存不够，需要从 Arena 再次请求；
+4. 根据是否对齐，判断从高/低地址分配
+
+
+test
+db/db_write_test.cc
+
