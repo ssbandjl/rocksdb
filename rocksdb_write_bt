@@ -1,0 +1,21 @@
+gdb) bt
+#0  rocksdb::WriteBatch::Put (this=0x7fffe3ff6720, column_family=0x55555575c9e0, key=..., value=...) at /root/project/stor/db/rocksdb/rocksdb/db/write_batch.cc:831
+#1  0x00007ffff72e81cb in rocksdb::DB::Put (this=0x555555769c00, opt=..., column_family=0x55555575c9e0, key=..., value=...)
+    at /root/project/stor/db/rocksdb/rocksdb/db/db_impl/db_impl_write.cc:2331
+#2  0x00007ffff72db531 in rocksdb::DBImpl::Put (this=0x555555769c00, o=..., column_family=0x55555575c9e0, key=..., val=...)
+    at /root/project/stor/db/rocksdb/rocksdb/db/db_impl/db_impl_write.cc:28
+#3  0x00007ffff7267b83 in rocksdb::DB::Put (this=0x555555769c00, options=..., key=..., value=...) at /root/project/stor/db/rocksdb/rocksdb/include/rocksdb/db.h:405
+#4  0x00005555555d804a in rocksdb::DBWriteTestUnparameterized_PipelinedWriteRace_Test::<lambda()>::operator()(void) const (__closure=0x55555576c498)
+    at /root/project/stor/db/rocksdb/rocksdb/db/db_write_test.cc:371
+#5  0x00005555555e751b in std::__invoke_impl<void, rocksdb::DBWriteTestUnparameterized_PipelinedWriteRace_Test::TestBody()::<lambda()> >(std::__invoke_other, rocksdb::DBWriteTestUnparameterized_PipelinedWriteRace_Test::<lambda()> &&) (__f=...) at /usr/include/c++/9/bits/invoke.h:60
+#6  0x00005555555e72a8 in std::__invoke<rocksdb::DBWriteTestUnparameterized_PipelinedWriteRace_Test::TestBody()::<lambda()> >(rocksdb::DBWriteTestUnparameterized_PipelinedWriteRace_Test::<lambda()> &&) (__fn=...) at /usr/include/c++/9/bits/invoke.h:95
+#7  0x00005555555e7106 in std::thread::_Invoker<std::tuple<rocksdb::DBWriteTestUnparameterized_PipelinedWriteRace_Test::TestBody()::<lambda()> > >::_M_invoke<0>(std::_Index_tuple<0>) (this=0x55555576c498) at /usr/include/c++/9/thread:244
+#8  0x00005555555e702e in std::thread::_Invoker<std::tuple<rocksdb::DBWriteTestUnparameterized_PipelinedWriteRace_Test::TestBody()::<lambda()> > >::operator()(void) (
+    this=0x55555576c498) at /usr/include/c++/9/thread:251
+#9  0x00005555555e6f44 in std::thread::_State_impl<std::thread::_Invoker<std::tuple<rocksdb::DBWriteTestUnparameterized_PipelinedWriteRace_Test::TestBody()::<lambda()> > > >::_M_run(--Type <RET> for more, q to quit, c to continue without paging--
+void) (this=0x55555576c490) at /usr/include/c++/9/thread:195
+#10 0x00007ffff5f67de4 in ?? () from /lib/x86_64-linux-gnu/libstdc++.so.6
+
+
+#11 0x00007ffff607b609 in start_thread (arg=<optimized out>) at pthread_create.c:477
+#12 0x00007ffff5da3163 in clone () at ../sysdeps/unix/sysv/linux/x86_64/clone.S:95

@@ -5,6 +5,7 @@
 //
 #include "port/stack_trace.h"
 
+// #define ROCKSDB_BACKTRACE 1
 #if !(defined(ROCKSDB_BACKTRACE) || defined(OS_MACOSX)) || defined(CYGWIN) || \
     defined(OS_SOLARIS) || defined(OS_WIN)
 

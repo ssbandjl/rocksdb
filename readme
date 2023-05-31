@@ -50,7 +50,7 @@ mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWITH_LZ4
 单元测试: RocksDB 使用 gtest。 GNU make 所使用的 makefile 有一些支持可以帮助开发者并行运行所有的单元测试，下面会介绍。 如果您使用 cmake，则可以使用 ctest 运行测试。
 make check
 sh tools/rocksdb_dump_test.sh
-make check将编译并运行所有单元测试。make check将在调试模式下编译 RocksDB
+make check 将编译并运行所有单元测试。make check 将在调试模式下编译 RocksDB
 
 make clean
 make J=64 all check [-j]
@@ -84,4 +84,12 @@ class ConcurrentArena : public Allocator
 
 test
 db/db_write_test.cc
+
+void InitGoogleTestImpl
+RegisterCustomObjects
+TEST_P(DBWriteTest, SyncAndDisableWAL) -> Status DBImpl::Put -> Status DB::Put
+  batch.Put
+  Write(opt, &batch)
+
+
 
