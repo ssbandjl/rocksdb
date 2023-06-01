@@ -81,15 +81,71 @@ class ConcurrentArena : public Allocator
 3. 若当前 Shard 可用内存不够，需要从 Arena 再次请求；
 4. 根据是否对齐，判断从高/低地址分配
 
+class DBImpl : public DB -> DB 是 RocksDB 的公共接口，而 DBImpl 是实际实现它的类。 它是核心 RocksdB 引擎的入口。所有其他 DB 实现，例如 TransactionDB、BlobDB等内部封装了一个DBImpl。除了实现DB接口的函数外，还有一些publicfunction供其他内部组件调用。 例如，TransactionDB 直接调用 DBImpl::WriteImpl() 而 BlobDB 直接调用 DBImpl::GetImpl()。 还有一些函数是供子组件调用的。 例如，ColumnFamilyHandleImpl 调用 DBImpl::FindObsoleteFiles()。由于它是一个非常大的类，除了 db_impl.cc 之外，函数的定义分为几个 db_impl_*.cc 文件
 
-test
+
+write test
+gdb db_write_test
 db/db_write_test.cc
-
-void InitGoogleTestImpl
+void InstallStackTraceHandler() 拦截信号, 打印堆栈 -> signal(SIGILL, StackTraceHandler) -> PrintStack(3)
+void InitGoogleTest -> void InitGoogleTestImpl -> p argv[0]@100 -> g_argvs.push_back(StreamableToString(argv[i])) 推送参数 -> GetUnitTestImpl()->PostFlagParsingInit()
+  return UnitTest::GetInstance()->impl()
 RegisterCustomObjects
-TEST_P(DBWriteTest, SyncAndDisableWAL) -> Status DBImpl::Put -> Status DB::Put
-  batch.Put
-  Write(opt, &batch)
+RUN_ALL_TESTS -> _GLOBAL__sub_I_db_write_test.cc -> __static_initialization_and_destruction_0 -> rocksdb::DBWriteTest_SyncAndDisableWAL_Test::AddToRegistry
+TEST_P(DBWriteTest, SyncAndDisableWAL) -> b db/db_write_test.cc:43 -> inline DestClass* static_cast_with_check(SrcClass* x) -> static_cast | dynamic_cast 处理遗留代码(RTTI)
+  Status DBImpl::Put -> const Status s = FailIfCfHasTs(column_family) -> Status DB::Put
+  WriteBatch batch
+  batch.Put -> Status WriteBatch::Put -> WriteBatchInternal::Put(this, cf_id, key, value) -> Status WriteBatchInternal::Put
+  Write(opt, &batch) -> Status DBImpl::Write -> Status DBImpl::WriteImpl -> if (write_options.sync && write_options.disableWAL) -> PipelinedWriteImpl -> Status DBImpl::PipelinedWriteImpl
+    if (w.state == WriteThread::STATE_MEMTABLE_WRITER_LEADER)
 
 
 
+cd examples;gdb simple_example
+example/simple_example.cc main
+IncreaseParallelism -> SetBackgroundThreads -> 16线程 -> WakeUpAllThreads -> StartBGThreads
+OptimizeLevelStyleCompaction
+DB::Open(options, kDBPath, &db) -> Status DB::Open
+  db_options.persist_stats_to_disk
+  Status s = DB::Open -> Status DB::Open
+    SetEnableTracking
+    SetThreadOperation
+    DBImpl::Open -> Status DBImpl::Open
+      ValidateOptionsByTable
+      ValidateOptions
+      max_write_buffer_size 128MB
+      DBImpl* impl = new DBImpl -> DBImpl::DBImpl
+        table_cache_ = NewLRUCache(co)
+        SetDbSessionId
+      CreateDirIfMissing
+      impl->Recover
+      NewFileNumber
+      impl->GetWalPreallocateBlockSize
+      impl->CreateWAL
+      impl->FlushWAL
+      log_writer->file()->Sync
+      LogAndApplyForRecovery
+      TEST_SYNC_POINT("DBImpl::Open:Opened")
+      MaybeScheduleFlushOrCompaction
+      impl->StartPeriodicTaskScheduler
+    ResetThreadStatus
+db->Put(WriteOptions(), "key1", "value")
+  Put(options, DefaultColumnFamily(), key, value) -> Status DBImpl::Put -> Status DB::Put -> Status WriteBatch::Put -> WriteBatchInternal::Put -> Status WriteBatchInternal::Put
+    SetCount
+    save.commit()
+  Write -> Status DBImpl::WriteImpl
+    WriteThread::Writer
+    write_thread_.JoinBatchGroup(&w) 加组
+    PreprocessWrite
+    ShouldWriteToMemtable
+    AddDBStats
+    WriteToWAL
+    ShouldWriteToMemtable
+    WriteBatchInternal::InsertInto
+db->Get(ReadOptions(), "key1", &value)
+
+
+
+put, write, 流程: https://www.jianshu.com/p/daa18eebf6e1
+Status DBImpl::PreprocessWrite leader写
+  total_log_size_ > GetMaxTotalWalSize() 比较WAL大小 -> SwitchWAL

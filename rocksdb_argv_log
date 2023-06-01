@@ -1,0 +1,15 @@
+(gdb) p argv[0]@100
+$22 = {0x7fffffffe23c "/root/project/stor/db/rocksdb/main/rocksdb/db_write_test", 0x0, 0x7fffffffe275 "SHELL=/bin/bash", 0x7fffffffe285 "COLORTERM=truecolor", 0x7fffffffe299 "TERM_PROGRAM_VERSION=1.77.3", 0x7fffffffe2b5 "LC_ADDRESS=zh_CN.UTF-8", 0x7fffffffe2cc "LC_NAME=zh_CN.UTF-8", 
+  0x7fffffffe2e0 "LC_MONETARY=zh_CN.UTF-8", 0x7fffffffe2f8 "PWD=/root/project/stor/db/rocksdb/main/rocksdb", 0x7fffffffe327 "LOGNAME=root", 0x7fffffffe334 "XDG_SESSION_TYPE=tty", 0x7fffffffe349 "_=/usr/bin/gdb", 
+  0x7fffffffe358 "VSCODE_GIT_ASKPASS_NODE=/root/.vscode-server/bin/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/node", 0x7fffffffe3b7 "MOTD_SHOWN=pam", 0x7fffffffe3c6 "LINES=15", 0x7fffffffe3cf "HOME=/root", 0x7fffffffe3da "LANG=en_US.UTF-8", 0x7fffffffe3eb "LC_PAPER=zh_CN.UTF-8", 
+  0x7fffffffe400 "LS_COLORS=rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc"..., 0x7fffffffe9ef "COLUMNS=261", 
+  0x7fffffffe9fb "GIT_ASKPASS=/root/.vscode-server/bin/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/extensions/git/dist/askpass.sh", 0x7fffffffea68 "https_proxy=http://xxx:8080", 0x7fffffffeaa1 "SSH_CONNECTION=10.132.32.198 1922 10.132.33.30 22", 
+  0x7fffffffead3 "VSCODE_GIT_ASKPASS_EXTRA_ARGS=", 0x7fffffffeaf2 "LESSCLOSE=/usr/bin/lesspipe %s %s", 0x7fffffffeb14 "XDG_SESSION_CLASS=user", 0x7fffffffeb2b "LC_IDENTIFICATION=zh_CN.UTF-8", 0x7fffffffeb49 "TERM=xterm-256color", 0x7fffffffeb5d "LESSOPEN=| /usr/bin/lesspipe %s", 
+  0x7fffffffeb7d "LIBVIRT_DEFAULT_URI=qemu:///system", 0x7fffffffeba0 "USER=root", 0x7fffffffebaa "VSCODE_GIT_IPC_HANDLE=/run/user/0/vscode-git-0f127bc4c2.sock", 0x7fffffffebe7 "SHLVL=1", 0x7fffffffebef "LC_TELEPHONE=zh_CN.UTF-8", 0x7fffffffec08 "LC_MEASUREMENT=zh_CN.UTF-8", 
+  0x7fffffffec23 "XDG_SESSION_ID=1", 0x7fffffffec34 "http_proxy=http:/xxx:8080", 0x7fffffffec6c "XDG_RUNTIME_DIR=/run/user/0", 0x7fffffffec88 "SSH_CLIENT=10.132.32.198 1922 22", 0x7fffffffeca9 "DEBUGINFOD_URLS=", 0x7fffffffecba "LC_TIME=zh_CN.UTF-8", 
+  0x7fffffffecce "VSCODE_GIT_ASKPASS_MAIN=/root/.vscode-server/bin/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/extensions/git/dist/askpass-main.js", 0x7fffffffed4c "XDG_DATA_DIRS=/usr/share/gnome:/usr/local/share:/usr/share:/var/lib/snapd/desktop", 
+  0x7fffffffed9e "BROWSER=/root/.vscode-server/bin/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/bin/helpers/browser.sh", 
+  0x7fffffffedff "PATH=/root/project/stor/ceph/xb/ceph/build/bin:/root/.vscode-server/bin/704ed70d4fd1c6bd6342c436f1ede30d1cff4710/bin/remote-cli:/root/project/stor/ceph/xb/ceph/build/bin:/usr/local/sbin:/usr/local/bin"..., 
+  0x7fffffffef0c "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/0/bus", 0x7fffffffef3f "LC_NUMERIC=zh_CN.UTF-8", 0x7fffffffef56 "TERM_PROGRAM=vscode", 0x7fffffffef6a "VSCODE_IPC_HOOK_CLI=/run/user/0/vscode-ipc-868c25a6-00dd-4016-b46e-29eab6cccd91.sock", 0x0, 
+  0x21 <error: Cannot access memory at address 0x21>, 0x7ffff7fc1000 "\177ELF\002\001\001"
+
