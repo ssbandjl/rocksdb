@@ -100,16 +100,35 @@ TEST_P(DBWriteTest, SyncAndDisableWAL) -> b db/db_write_test.cc:43 -> inline Des
     if (w.state == WriteThread::STATE_MEMTABLE_WRITER_LEADER)
 
 
-
+make simple_example
 cd examples;gdb simple_example
 example/simple_example.cc main
-IncreaseParallelism -> SetBackgroundThreads -> 16线程 -> WakeUpAllThreads -> StartBGThreads
-OptimizeLevelStyleCompaction
-DB::Open(options, kDBPath, &db) -> Status DB::Open
-  db_options.persist_stats_to_disk
-  Status s = DB::Open -> Status DB::Open
-    SetEnableTracking
-    SetThreadOperation
+IncreaseParallelism -> 增加并行度, 线程池,最大后台压缩, RocksDB 默认仅使用一个后台线程进行刷新和压缩。 调用此函数会将其设置为使用“total_threads”总数。 `total_threads` 的好值是核心数。 如果您的系统受到 RocksDB 的瓶颈，您几乎肯定要调用此函数 -> SetBackgroundThreads -> 默认16线程 -> DBOptions* IncreaseParallelism(int total_threads = 16) -> DBOptions* DBOptions::IncreaseParallelism
+  max_background_jobs 16
+  SetBackgroundThreads 线程池中的job调度优先级 ->  enum Priority { BOTTOM, LOW, HIGH, USER, TOTAL } -> thread_pools_[pri].SetBackgroundThreads(num) -> void ThreadPoolImpl::Impl::SetBackgroundThreadsInternal 允许减少
+    WakeUpAllThreads -> bgsignal_.notify_all() 唤醒所有线程, HDFS 包装了 posix 线程, 没有向 posix Env 或线程库添加新功能
+    StartBGThreads -> void ThreadPoolImpl::Impl::StartBGThreads 启动后台线程
+      port::Thread p_t(&BGThreadWrapper, new BGThreadMetadata(this, bgthreads_.size())) -> 该类thread表示单个执行线程。线程允许多个函数同时执行。线程在构造相关线程对象后立即开始执行（等待任何 OS 调度延迟），从作为构造函数参数提供的顶级函数开始。顶级函数的返回值被忽略，如果它通过抛出异常终止，则调用std::terminate 。顶级函数可以通过std::promise或通过修改共享变量（这可能需要同步，参见std::mutex和std::atomic） 将其返回值或异常传递给调用者std::thread对象也可能处于不代表任何线程的状态（在默认构造、move from、detach或join之后），执行线程可能不与任何thread对象相关联（在detach之后）。任何两个std::thread对象都不能代表同一个执行线程；std::thread不是CopyConstructible或CopyAssignable，尽管它是MoveConstructible和MoveAssignable
+        void ThreadPoolImpl::Impl::BGThreadWrapper(void* arg)
+          BGThreadMetadata* meta = reinterpret_cast<BGThreadMetadata*>(arg) 重新解释(bit)
+          ThreadStatusUtil::RegisterThread(tp->GetHostEnv(), thread_type) -> MaybeInitThreadLocalUpdater 已经初始化则直接返回
+            RegisterThread(thread_type, env->GetThreadID()) -> thread_id = ::gettid() -> void ThreadStatusUpdater::RegisterThread -> thread_data_set_.insert(thread_status_data_) -> std::unordered_set<ThreadStatusData*> thread_data_set_ -> 由唯一键（每个键值最多包含一个）组成的标准容器，其中元素的键是元素本身
+            ClearThreadOperationProperties -> data->op_properties[i].store(0, std::memory_order_relaxed)全部存储为0
+          tp->BGThread(thread_id)
+            auto func = std::move(queue_.front().function) -> func() 从队列中获取函数并执行
+      thread_name_stream << static_cast<char>(tolower(c)) -> 优先级加入线程名中
+      pthread_setname_np(th_handle, thread_name_stream.str().c_str())
+      bgthreads_.push_back(std::move(p_t))
+OptimizeLevelStyleCompaction 最简单的优化 rocksdb 的方法，通过关卡样式压缩减少停顿 -> memtable_memory_budget 内存预算512MB -> ColumnFamilyOptions* ColumnFamilyOptions::OptimizeLevelStyleCompaction
+  write_buffer_size 128MB
+  compression_per_level.resize(num_levels) 7层, 不同的级别可以有不同的压缩策略。 在某些情况下，大多数较低级别希望使用快速压缩算法，而较高级别（具有更多数据）使用具有更好压缩但可能更慢的压缩算法。 这个数组，如果非空，应该为数据库的每个级别都有一个条目； 这些覆盖了前一个字段'compression'中指定的值。注意如果level_compaction_dynamic_level_bytes = true，compression_per_level [0]仍然确定L0，但数组的其他元素基于基本级别（L0文件合并到），并且可能与 级别用户从信息日志中查看元数据。如果 L0 文件合并到级别 n，则对于 i>0，compression_per_level[i] 确定级别 n+i-1 的压缩类型。例如，如果我们有三个 5 级别 ，并且我们决定将L0数据合并到L4（这意味着L1..L3将是空的），然后新文件到L4使用压缩类型compression_per_level [1]。如果现在L0合并到L2。 进入 L2 的数据将根据 compression_per_level[1]、L3 使用 compression_per_level[2] 和 L4 使用 compression_per_level[3] 进行压缩。 当数据增长时，每个级别的压缩都会发生变化。注意：如果向量大小小于级别数，则未定义的较低级别使用向量中的最后一个选项，例如，对于 3 级 LSM 树，以下设置相同：{kNoCompression, kSnappyCompression}{kNoCompression, kSnappyCompression, kSnappyCompression}可通过 SetOptions() API 动态更改
+  LZ4_Supported Snappy_Supported 两个三目,设置压缩算法
+DB::Open(options, kDBPath, &db) -> db/db_impl/db_impl_open.cc -> Status DB::Open(const Options& options, const std::string& dbname, DB** dbptr)
+  column_families.push_back
+  db_options.persist_stats_to_disk -> 默认false,不持久到盘, 如果为 true，则自动将统计信息持久保存到一个隐藏的列族（列族名称：___rocksdb_stats_history___）everystats_persist_period_sec 秒； 否则，写入内存结构。 用户可以通过 `GetStatsHistory` API 进行查询。如果用户尝试在之前将 persist_stats_to_disk 设置为 true 的数据库上创建具有相同名称的列族，则列族创建将失败，但隐藏的列族将继续存在，以及之前持久化的列族 statistics.When peristing stats to disk, stat name 将被限制在 100 bytes.Default: false
+ Status s = DB::Open(db_options, dbname, column_families, &handles, dbptr) -> 打开具有指定“名称”的数据库进行读取和写入。在 *dbptr 中存储指向堆分配数据库的指针，并在成功时返回 OK。在 *dbptr 中存储 nullptr 并在出错时返回非 OK 状态，包括如果 DB 是 已被另一个数据库对象打开（读写）。 （此保证取决于 options.env->LockFile()，它可能不会在自定义 Env 实现中提供此保证。）调用者必须在不再需要时删除 *dbptr
+    SetEnableTracking -> 压力测试, db_bench
+    SetThreadOperation -> void ThreadStatusUtil::SetThreadOperation
     DBImpl::Open -> Status DBImpl::Open
       ValidateOptionsByTable
       ValidateOptions
